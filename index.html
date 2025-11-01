@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortgage Calculator - Netherlands</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 Mortgage Calculator (Netherlands)</h1>
+            <p>Calculate your mortgage payments with Dutch tax deductions</p>
+        </header>
+
+        <div class="main-content">
+            <div class="input-section">
+                <h2>Mortgage Parameters</h2>
+                <form id="mortgageForm">
+                    <div class="form-group">
+                        <label for="principal">Mortgage Amount (€)</label>
+                        <input type="number" id="principal" name="principal" min="0" step="1000" value="300000" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paymentType">Payment Type</label>
+                        <select id="paymentType" name="paymentType" required>
+                            <option value="annuity">Annuity</option>
+                            <option value="linear">Linear</option>
+                        </select>
+                        <small>Annuity: Fixed monthly payment | Linear: Fixed principal + decreasing interest</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="interestRate">Interest Rate (%)</label>
+                        <input type="number" id="interestRate" name="interestRate" min="0" max="100" step="0.01" value="4.5" required>
+                        <small>Annual interest rate (calculated monthly)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mortgageTerm">Mortgage Term (years)</label>
+                        <input type="number" id="mortgageTerm" name="mortgageTerm" min="1" max="50" step="1" value="30" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taxRate">Dutch Tax Rate (%)</label>
+                        <input type="number" id="taxRate" name="taxRate" min="0" max="100" step="0.1" value="37" required>
+                        <small>Your income tax rate for mortgage interest deduction</small>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Calculate</button>
+                </form>
+            </div>
+
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <h2>Results</h2>
+
+                <div class="summary-cards">
+                    <div class="card">
+                        <h3>Average Monthly Payment</h3>
+                        <div class="amount" id="avgMonthlyPayment">€0</div>
+                        <div class="breakdown">
+                            <span>Bruto: <span id="avgMonthlyBruto">€0</span></span>
+                            <span>Net: <span id="avgMonthlyNet">€0</span></span>
+                        </div>
+                        <div class="tax-info">
+                            Avg. tax deduction: <span id="avgMonthlyTaxDeduction">€0</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>First Month Payment</h3>
+                        <div class="amount" id="monthlyPayment">€0</div>
+                        <div class="breakdown">
+                            <span>Interest: <span id="monthlyInterest">€0</span></span>
+                            <span>Principal: <span id="monthlyPrincipal">€0</span></span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Yearly Payment</h3>
+                        <div class="amount" id="yearlyPayment">€0</div>
+                        <div class="breakdown">
+                            <span>Bruto: <span id="yearlyBruto">€0</span></span>
+                            <span>Net: <span id="yearlyNet">€0</span></span>
+                        </div>
+                        <div class="tax-info">
+                            Tax deduction: <span id="yearlyTaxDeduction">€0</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Total Payment</h3>
+                        <div class="amount" id="totalPayment">€0</div>
+                        <div class="breakdown">
+                            <span>Bruto: <span id="totalBruto">€0</span></span>
+                            <span>Net: <span id="totalNet">€0</span></span>
+                        </div>
+                        <div class="tax-info">
+                            Total tax deduction: <span id="totalTaxDeduction">€0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="yearly-table-section">
+                    <h3>Yearly Breakdown</h3>
+                    <div class="table-container">
+                        <table id="yearlyTable">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Bruto Payment</th>
+                                    <th>Interest</th>
+                                    <th>Principal</th>
+                                    <th>Tax Deduction</th>
+                                    <th>Net Payment</th>
+                                    <th>Remaining Debt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="yearlyTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <h3>Payment Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <h3>Yearly Payments Over Time</h3>
+                    <div class="chart-container">
+                        <canvas id="yearlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

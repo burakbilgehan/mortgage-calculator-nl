@@ -1,0 +1,17 @@
+{
+  "name": "mortgage-calculator-nl",
+  "version": "1.0.0",
+  "description": "Parametric mortgage calculator for Netherlands with bruto/net calculations",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx http-server -p 8080 -o",
+    "dev": "npx http-server -p 8080 -o"
+  },
+  "keywords": ["mortgage", "calculator", "netherlands"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
+
