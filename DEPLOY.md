@@ -1,37 +1,52 @@
 # Deployment Instructions
 
-## Step 1: Create GitHub Repository
+## Repository URL
+**https://github.com/burakbilgehan/mortgage-calculator-nl**
 
-1. Go to https://github.com/new
-2. Repository name: `mortgage-calculator-nl`
-3. Description: "Mortgage Calculator for Netherlands with inflation adjustments"
-4. Make it **Public** (required for free GitHub Pages)
-5. **Do NOT** initialize with README, .gitignore, or license (we already have these)
-6. Click "Create repository"
+## Step 1: Push to GitHub
 
-## Step 2: Push to GitHub
+The remote is already configured. You need to push with authentication.
 
-Run these commands (or I can run them for you):
+### Option A: Using Personal Access Token (Recommended)
+
+1. **Create a Personal Access Token:**
+   - Go to: https://github.com/settings/tokens
+   - Click "Generate new token" → "Generate new token (classic)"
+   - Name it: "mortgage-calculator"
+   - Select scope: **repo** (all repo permissions)
+   - Click "Generate token"
+   - **Copy the token** (you won't see it again!)
+
+2. **Push your code:**
+   ```bash
+   git push -u origin main
+   ```
+   - Username: `burakbilgehan`
+   - Password: **Paste your Personal Access Token** (not your GitHub password!)
+
+### Option B: Use the Helper Script
 
 ```bash
-git remote add origin https://github.com/burakkaanbilgehan/mortgage-calculator-nl.git
-git branch -M main
-git push -u origin main
+./push.sh
 ```
 
-## Step 3: Enable GitHub Pages
+This will guide you through the push process.
 
-1. Go to your repository on GitHub: https://github.com/burakkaanbilgehan/mortgage-calculator-nl
-2. Click **Settings** → **Pages**
+## Step 2: Enable GitHub Pages
+
+1. Go to your repository: https://github.com/burakbilgehan/mortgage-calculator-nl
+2. Click **Settings** → **Pages** (in left sidebar)
 3. Under "Source", select:
    - Source: **GitHub Actions**
-4. The GitHub Actions workflow will automatically deploy your site!
+4. Save the settings
+
+The GitHub Actions workflow will automatically deploy your site on every push!
 
 ## Your Live Site
 
 After the GitHub Actions workflow completes (takes ~2 minutes), your site will be available at:
 
-**https://burakkaanbilgehan.github.io/mortgage-calculator-nl/**
+**https://burakbilgehan.github.io/mortgage-calculator-nl/**
 
 ## Future Updates
 
