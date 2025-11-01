@@ -11,9 +11,11 @@ class MortgageCalculator {
         this.paymentType = options.paymentType || 'annuity';
         this.mortgageTerm = options.mortgageTerm || 30;
         this.dutchTaxRate = options.dutchTaxRate || 0.37;
+        this.inflationRate = options.inflationRate || 0;
         
         this.monthlyInterestRate = this.interestRate / 100 / 12;
         this.totalMonths = this.mortgageTerm * 12;
+        this.inflationFactor = 1 + (this.inflationRate / 100);
     }
 
     calculateAnnuityMonthlyPayment() {
@@ -111,6 +113,17 @@ class MortgageCalculator {
             data.brutoPayment = data.totalPayment;
             data.netPayment = data.totalPayment - taxDeduction;
             data.taxDeduction = taxDeduction;
+            
+            // Calculate real (inflation-adjusted) values
+            // Year 1 money is worth more than Year 30 money due to inflation
+            // Real value = Nominal value / (1 + inflation)^(year - 1)
+            const yearsFromStart = parseInt(year) - 1;
+            const inflationMultiplier = Math.pow(this.inflationFactor, yearsFromStart);
+            data.brutoPaymentReal = data.brutoPayment / inflationMultiplier;
+            data.netPaymentReal = data.netPayment / inflationMultiplier;
+            data.taxDeductionReal = data.taxDeduction / inflationMultiplier;
+            data.totalInterestReal = data.totalInterest / inflationMultiplier;
+            data.totalPrincipalReal = data.totalPrincipal / inflationMultiplier;
         });
 
         return Object.values(yearlyData);
@@ -122,13 +135,35 @@ class MortgageCalculator {
         const totalPayment = amortization.totalPayment;
         const taxDeduction = totalInterest * this.dutchTaxRate;
         
+        // Calculate cumulative real values for totals
+        const yearlySummary = this.calculateYearlySummary();
+        let totalBrutoPaymentReal = 0;
+        let totalNetPaymentReal = 0;
+        let totalTaxDeductionReal = 0;
+        let totalInterestReal = 0;
+        let totalPrincipalReal = 0;
+        
+        yearlySummary.forEach(year => {
+            totalBrutoPaymentReal += year.brutoPaymentReal || 0;
+            totalNetPaymentReal += year.netPaymentReal || 0;
+            totalTaxDeductionReal += year.taxDeductionReal || 0;
+            totalInterestReal += year.totalInterestReal || 0;
+            totalPrincipalReal += year.totalPrincipalReal || 0;
+        });
+        
         return {
             principal: this.principal,
             totalInterest,
             totalPayment,
             taxDeduction,
             brutoPayment: totalPayment,
-            netPayment: totalPayment - taxDeduction
+            netPayment: totalPayment - taxDeduction,
+            // Real values (cumulative)
+            totalBrutoPaymentReal,
+            totalNetPaymentReal,
+            totalTaxDeductionReal,
+            totalInterestReal,
+            totalPrincipalReal
         };
     }
 
@@ -192,7 +227,8 @@ function getFormElements() {
         interestRate: document.getElementById('interestRate'),
         paymentType: document.getElementById('paymentType'),
         mortgageTerm: document.getElementById('mortgageTerm'),
-        taxRate: document.getElementById('taxRate')
+        taxRate: document.getElementById('taxRate'),
+        inflationRate: document.getElementById('inflationRate')
     };
 }
 
@@ -222,6 +258,7 @@ function calculateMortgage() {
         const paymentType = elements.paymentType.value;
         const mortgageTerm = parseFloat(elements.mortgageTerm.value);
         const taxRate = parseFloat(elements.taxRate.value) / 100;
+        const inflationRate = parseFloat(elements.inflationRate.value);
 
         if (isNaN(principal) || principal <= 0) {
             alert('Please enter a valid mortgage amount');
@@ -239,13 +276,18 @@ function calculateMortgage() {
             alert('Please enter a valid tax rate (0-100)');
             return;
         }
+        if (isNaN(inflationRate) || inflationRate < 0 || inflationRate > 20) {
+            alert('Please enter a valid inflation rate (0-20)');
+            return;
+        }
 
         calculator = new MortgageCalculator({
             principal,
             interestRate,
             paymentType,
             mortgageTerm,
-            dutchTaxRate: taxRate
+            dutchTaxRate: taxRate,
+            inflationRate: inflationRate
         });
 
         displayResults();
@@ -313,34 +355,61 @@ function displayYearlyTable(yearlySummary) {
     
     yearlySummary.forEach(yearData => {
         const row = document.createElement('tr');
+        const inflationRate = calculator.inflationRate;
+        const showReal = inflationRate > 0;
+        
+        // Format with real values in parentheses if inflation is set
+        const formatWithReal = (nominal, real) => {
+            if (showReal && real !== undefined && !isNaN(real)) {
+                return `${formatCurrency(nominal)} <span style="color: #888; font-size: 0.9em;">(${formatCurrency(real)})</span>`;
+            }
+            return formatCurrency(nominal);
+        };
+        
         row.innerHTML = `
             <td>${yearData.year}</td>
-            <td>${formatCurrency(yearData.brutoPayment)}</td>
-            <td>${formatCurrency(yearData.totalInterest)}</td>
-            <td>${formatCurrency(yearData.totalPrincipal)}</td>
-            <td style="color: #28a745;">${formatCurrency(yearData.taxDeduction)}</td>
-            <td style="font-weight: 600;">${formatCurrency(yearData.netPayment)}</td>
+            <td>${formatWithReal(yearData.brutoPayment, yearData.brutoPaymentReal)}</td>
+            <td>${formatWithReal(yearData.totalInterest, yearData.totalInterestReal)}</td>
+            <td>${formatWithReal(yearData.totalPrincipal, yearData.totalPrincipalReal)}</td>
+            <td style="color: #28a745;">${formatWithReal(yearData.taxDeduction, yearData.taxDeductionReal)}</td>
+            <td style="font-weight: 600;">${formatWithReal(yearData.netPayment, yearData.netPaymentReal)}</td>
             <td style="color: #dc3545; font-weight: 600;">${formatCurrency(yearData.remainingDebt)}</td>
         `;
         tbody.appendChild(row);
     });
     
-    const totals = yearlySummary.reduce((acc, year) => ({
-        bruto: acc.bruto + year.brutoPayment,
-        interest: acc.interest + year.totalInterest,
-        principal: acc.principal + year.totalPrincipal,
-        taxDeduction: acc.taxDeduction + year.taxDeduction,
-        net: acc.net + year.netPayment
-    }), { bruto: 0, interest: 0, principal: 0, taxDeduction: 0, net: 0 });
+    // Get totals - use totalSummary for real values which are already calculated
+    const totalSummary = calculator.calculateTotalSummary();
+    const totals = {
+        bruto: totalSummary.brutoPayment,
+        interest: totalSummary.totalInterest,
+        principal: totalSummary.principal,
+        taxDeduction: totalSummary.taxDeduction,
+        net: totalSummary.netPayment,
+        brutoReal: totalSummary.totalBrutoPaymentReal,
+        interestReal: totalSummary.totalInterestReal,
+        principalReal: totalSummary.totalPrincipalReal,
+        taxDeductionReal: totalSummary.totalTaxDeductionReal,
+        netReal: totalSummary.totalNetPaymentReal
+    };
+    
+    const inflationRate = calculator.inflationRate;
+    const showReal = inflationRate > 0;
+    const formatWithReal = (nominal, real) => {
+        if (showReal && real !== undefined && !isNaN(real)) {
+            return `<strong>${formatCurrency(nominal)}</strong> <span style="color: #888; font-size: 0.9em;">(${formatCurrency(real)})</span>`;
+        }
+        return `<strong>${formatCurrency(nominal)}</strong>`;
+    };
     
     const totalRow = document.createElement('tr');
     totalRow.innerHTML = `
         <td><strong>Total</strong></td>
-        <td><strong>${formatCurrency(totals.bruto)}</strong></td>
-        <td><strong>${formatCurrency(totals.interest)}</strong></td>
-        <td><strong>${formatCurrency(totals.principal)}</strong></td>
-        <td style="color: #28a745;"><strong>${formatCurrency(totals.taxDeduction)}</strong></td>
-        <td><strong>${formatCurrency(totals.net)}</strong></td>
+        <td>${formatWithReal(totals.bruto, totals.brutoReal)}</td>
+        <td>${formatWithReal(totals.interest, totals.interestReal)}</td>
+        <td>${formatWithReal(totals.principal, totals.principalReal)}</td>
+        <td style="color: #28a745;">${formatWithReal(totals.taxDeduction, totals.taxDeductionReal)}</td>
+        <td>${formatWithReal(totals.net, totals.netReal)}</td>
         <td><strong>-</strong></td>
     `;
     tbody.appendChild(totalRow);
@@ -495,7 +564,8 @@ function saveFormValues(elements) {
             interestRate: elements.interestRate.value,
             paymentType: elements.paymentType.value,
             mortgageTerm: elements.mortgageTerm.value,
-            taxRate: elements.taxRate.value
+            taxRate: elements.taxRate.value,
+            inflationRate: elements.inflationRate.value
         };
         
         localStorage.setItem('mortgageCalculatorConfig', JSON.stringify(formData));
@@ -517,6 +587,7 @@ function loadFormValues() {
         if (elements.paymentType && formData.paymentType) elements.paymentType.value = formData.paymentType;
         if (elements.mortgageTerm && formData.mortgageTerm) elements.mortgageTerm.value = formData.mortgageTerm;
         if (elements.taxRate && formData.taxRate) elements.taxRate.value = formData.taxRate;
+        if (elements.inflationRate && formData.inflationRate) elements.inflationRate.value = formData.inflationRate;
         
     } catch (error) {
         console.error('Error loading form values:', error);

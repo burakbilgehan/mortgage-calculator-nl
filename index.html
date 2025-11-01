@@ -49,6 +49,12 @@
                         <small>Your income tax rate for mortgage interest deduction</small>
                     </div>
 
+                    <div class="form-group">
+                        <label for="inflationRate">Yearly Inflation Rate (%)</label>
+                        <input type="number" id="inflationRate" name="inflationRate" min="0" max="20" step="0.1" value="2.0" required>
+                        <small>Annual inflation rate for real value adjustment</small>
+                    </div>
+
                     <button type="submit" class="btn-primary">Calculate</button>
                 </form>
             </div>
